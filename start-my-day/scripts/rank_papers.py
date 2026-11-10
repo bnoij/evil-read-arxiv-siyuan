@@ -252,9 +252,33 @@ def _read_rows(path: Path) -> List[Dict]:
         return list(csv.DictReader(handle))
 
 
+def paper_aliases(paper: Dict) -> List[str]:
+    arxiv_id = re.sub(r"v\d+$", "", paper.get("arxiv_id", ""), flags=re.IGNORECASE).lower()
+    doi = re.sub(r"^https?://(?:dx\.)?doi\.org/", "", paper.get("doi", ""), flags=re.IGNORECASE).lower()
+    title = re.sub(r"[^a-z0-9\u4e00-\u9fff]+", "", paper.get("title", "").lower())
+    return [value for value in (f"arxiv:{arxiv_id}" if arxiv_id else "", f"doi:{doi}" if doi else "", f"title:{title}" if title else "") if value]
+
+
+def merge_paper_group(group: Dict, paper: Dict, is_hot: bool) -> None:
+    current = group["paper"]
+    current_match = re.search(r"v(\d+)$", current.get("arxiv_id", ""), re.IGNORECASE)
+    paper_match = re.search(r"v(\d+)$", paper.get("arxiv_id", ""), re.IGNORECASE)
+    current_version = int(current_match.group(1)) if current_match else 0
+    paper_version = int(paper_match.group(1)) if paper_match else 0
+    preferred, other = (paper, current) if paper_version >= current_version else (current, paper)
+    for field, value in other.items():
+        if not preferred.get(field) and value:
+            preferred[field] = value
+    preferred["citationCount"] = max(current.get("citationCount", 0), paper.get("citationCount", 0))
+    preferred["influentialCitationCount"] = max(current.get("influentialCitationCount", 0), paper.get("influentialCitationCount", 0))
+    group["paper"] = preferred
+    group["hot"] = group["hot"] or is_hot
+
+
 def rank_papers(inputs: List[Path], config: Dict, target_date: datetime, top_n: int) -> Dict:
     total = 0
     groups = {}
+    aliases = {}
     for input_path in inputs:
         path = Path(input_path)
         rows = _read_rows(path)
@@ -262,25 +286,25 @@ def rank_papers(inputs: List[Path], config: Dict, target_date: datetime, top_n: 
         for row in rows:
             source = str(row.get("source") or ("scholar" if "scholar" in path.name.lower() else "arxiv")).lower()
             paper = normalize_paper(row, source)
-            arxiv_id = re.sub(r"v\d+$", "", paper.get("arxiv_id", ""), flags=re.IGNORECASE)
-            title = re.sub(r"[^a-z0-9\u4e00-\u9fff]+", "", paper.get("title", "").lower())
-            key = arxiv_id or title
-            if not key:
+            keys = paper_aliases(paper)
+            if not keys:
                 continue
             is_hot = source == "scholar"
-            if key not in groups:
+            existing = list(dict.fromkeys(aliases[key] for key in keys if key in aliases))
+            if not existing:
+                key = keys[0]
                 groups[key] = {"paper": paper, "hot": is_hot}
-                continue
-            current = groups[key]["paper"]
-            current_version = int(re.search(r"v(\d+)$", current.get("arxiv_id", ""), re.IGNORECASE).group(1)) if re.search(r"v(\d+)$", current.get("arxiv_id", ""), re.IGNORECASE) else 0
-            paper_version = int(re.search(r"v(\d+)$", paper.get("arxiv_id", ""), re.IGNORECASE).group(1)) if re.search(r"v(\d+)$", paper.get("arxiv_id", ""), re.IGNORECASE) else 0
-            preferred, other = (paper, current) if paper_version >= current_version else (current, paper)
-            for field, value in other.items():
-                if not preferred.get(field) and value:
-                    preferred[field] = value
-            preferred["citationCount"] = max(current.get("citationCount", 0), paper.get("citationCount", 0))
-            preferred["influentialCitationCount"] = max(current.get("influentialCitationCount", 0), paper.get("influentialCitationCount", 0))
-            groups[key] = {"paper": preferred, "hot": groups[key]["hot"] or is_hot}
+            else:
+                key = existing[0]
+                merge_paper_group(groups[key], paper, is_hot)
+                for duplicate in existing[1:]:
+                    other = groups.pop(duplicate)
+                    merge_paper_group(groups[key], other["paper"], other["hot"])
+                    for alias, mapped in list(aliases.items()):
+                        if mapped == duplicate:
+                            aliases[alias] = key
+            for alias_value in keys:
+                aliases[alias_value] = key
     scored = []
     for group in groups.values():
         scored.extend(filter_and_score_papers([group["paper"]], config, target_date, is_hot_paper_batch=group["hot"]))

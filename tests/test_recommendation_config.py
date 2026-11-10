@@ -1,5 +1,6 @@
 import csv
 import importlib.util
+import json
 import unittest
 from datetime import datetime
 from pathlib import Path
@@ -115,6 +116,24 @@ class RecommendationConfigTests(unittest.TestCase):
         self.assertEqual(normalized["venue"], "International Conference on Learning Representations")
         self.assertEqual(normalized["pdf_url"], "https://arxiv.org/pdf/2601.00001")
         self.assertEqual(normalized["arxiv_id"], "2601.00001")
+
+    def test_doi_merges_preprint_and_published_titles(self):
+        config = {
+            "research_domains": {"robots": {"keywords": ["robot learning"]}},
+            "excluded_keywords": [],
+        }
+        rows = [
+            {"arxiv_id": "2601.00001", "doi": "https://doi.org/10.1000/robot", "title": "Robot Learning Preprint", "summary": "robot learning"},
+            {"doi": "10.1000/robot", "title": "Robot Learning Published Version", "summary": "robot learning", "source": "scholar", "citations": "20"},
+        ]
+        with TemporaryDirectory() as directory:
+            source = Path(directory) / "kimi.json"
+            source.write_text(json.dumps(rows), encoding="utf-8")
+
+            result = search.rank_papers([source], config, datetime(2026, 1, 10), top_n=10)
+
+        self.assertEqual(result["total_unique"], 1)
+        self.assertEqual(result["top_papers"][0]["citationCount"], 20)
 
     def test_missing_optional_kimi_fields_do_not_fail(self):
         normalized = search.normalize_paper({"title": "Empty metadata", "source": "scholar"}, "scholar")
