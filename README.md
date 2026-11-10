@@ -15,7 +15,7 @@
 
 ## 功能
 
-- `start-my-day`：每日推荐 10 篇，全部进入 Zotero，生成思源日报，前三篇生成精读。
+- `start-my-day`：每日推荐 10 篇，全部进入 Zotero 的 `daily` 分类（不存在时自动创建），生成思源日报，前三篇生成精读。
 - `paper-analyze`：分析 arXiv、公开/本地 PDF、研究项目页、博客和普通网页。
 - `extract-paper-images`：提取论文图片并上传到思源 `/assets/`。
 - `paper-search`：通过思源全文搜索查找已有论文笔记。

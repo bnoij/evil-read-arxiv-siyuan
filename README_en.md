@@ -15,7 +15,7 @@ This repository provides open `SKILL.md` workflows for Kimi Code and Kimi Work.
 
 ## Skills
 
-- `start-my-day`: recommend 10 papers, import all into Zotero, create a SiYuan report, and deeply analyze the top 3.
+- `start-my-day`: recommend 10 papers, import all into Zotero's `daily` collection (created when absent), create a SiYuan report, and deeply analyze the top 3.
 - `paper-analyze`: analyze arXiv papers, public/local PDFs, project pages, blogs, and webpages.
 - `extract-paper-images`: extract figures and upload them to SiYuan `/assets/`.
 - `paper-search`: find existing notes through SiYuan full-text search.
