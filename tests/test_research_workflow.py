@@ -1,6 +1,9 @@
 import importlib.util
+import io
+import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,6 +54,15 @@ class ResearchWorkflowTests(unittest.TestCase):
         self.assertIn("siyuan://blocks/NOTE1", markdown)
         self.assertIn("Contribution", markdown)
 
+    def test_json_stdout_is_always_utf8(self):
+        buffer = io.BytesIO()
+        stdout = type("Stdout", (), {"buffer": buffer})()
+
+        with patch.object(sys, "stdout", stdout):
+            workflow.emit_json({"title": "论文推荐"})
+
+        self.assertIn("论文推荐", buffer.getvalue().decode("utf-8"))
+
     def test_empty_note_is_written_with_current_hash(self):
         state = {"exists": True, "contentHash": jobs.stable_hash(""), "attrs": {}}
 
@@ -68,6 +80,15 @@ class ResearchWorkflowTests(unittest.TestCase):
         self.assertEqual(note["expectedHash"], jobs.stable_hash(""))
         self.assertEqual(note["onConflict"], "report")
         self.assertEqual(decisions["NOTE1"]["status"], "write")
+
+    def test_placeholder_empty_note_remains_writable_after_hash_alignment(self):
+        state = {"exists": True, "empty": True, "contentHash": jobs.stable_hash("\n"), "attrs": {}}
+
+        documents, _ = workflow.prepare_write_documents(
+            [paper()], "/daily", "/graph", "daily", "graph", lambda **_kwargs: state
+        )
+
+        self.assertEqual(next(item for item in documents if item.get("docId") == "NOTE1")["expectedHash"], jobs.stable_hash("\n"))
 
     def test_manual_note_is_preserved_without_a_write_operation(self):
         state = {"exists": True, "contentHash": jobs.stable_hash("manual"), "attrs": {}}
@@ -105,6 +126,27 @@ class ResearchWorkflowTests(unittest.TestCase):
         self.assertFalse(any(item.get("docId") == "NOTE1" for item in documents))
         self.assertEqual(decisions["NOTE1"]["status"], "unchanged")
         self.assertEqual(next(item for item in forced if item.get("docId") == "NOTE1")["onConflict"], "overwrite")
+
+    def test_exported_indentation_still_counts_as_unchanged_ai_content(self):
+        markdown = paper()["analysis_markdown"]
+        exported = markdown.replace("本文", "　　本文") if "本文" in markdown else "　　" + markdown
+        current_hash = jobs.stable_hash(jobs.canonical_document_markdown(exported))
+        state = {
+            "exists": True,
+            "contentHash": current_hash,
+            "contentFingerprint": jobs.content_fingerprint(exported),
+            "attrs": {
+                "custom-research-workflow": "evil-read-arxiv",
+                "custom-research-content-hash": current_hash,
+            },
+        }
+
+        documents, decisions = workflow.prepare_write_documents(
+            [paper()], "/daily", "/graph", "daily", "graph", lambda **_kwargs: state
+        )
+
+        self.assertFalse(any(item.get("docId") == "NOTE1" for item in documents))
+        self.assertEqual(decisions["NOTE1"]["status"], "unchanged")
 
     def test_daily_workflow_submits_ensure_then_exact_markdown_writes(self):
         class FakeClient:

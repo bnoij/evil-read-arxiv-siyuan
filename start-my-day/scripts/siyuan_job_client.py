@@ -17,7 +17,12 @@ def canonical_document_markdown(exported) -> str:
     content = re.sub(r"^# [^\n]+(?:\r?\n){2}", "", content, count=1)
     content = re.sub(r'<p class="indent--\d+">([\s\S]*?)</p>', r"\1", content)
     content = re.sub(r"[\u200b-\u200d\ufeff]", "", content)
-    return "\n".join("" if not line.strip() else line for line in content.splitlines())
+    return "\n".join("" if not line.strip() else line for line in re.split(r"\r?\n", content))
+
+
+def content_fingerprint(value) -> str:
+    canonical = canonical_document_markdown(value)
+    return stable_hash(re.sub(r"\s+", "", canonical))
 
 
 def stable_hash(value) -> str:
@@ -115,17 +120,20 @@ class SiYuanJobClient:
     def get_document_state(self, doc_id="", path=""):
         if not doc_id and path:
             escaped = path.replace("'", "''")
-            rows = self._request("/api/query/sql", {"stmt": f"SELECT id FROM blocks WHERE type = 'doc' AND hpath = '{escaped}' LIMIT 1"})
+            rows = self._request("/api/query/sql", {"stmt": f"SELECT id FROM blocks WHERE type = 'd' AND hpath = '{escaped}' LIMIT 1"})
             doc_id = rows[0]["id"] if rows else ""
         if not doc_id:
-            return {"exists": False, "docId": "", "path": path, "contentHash": stable_hash(""), "attrs": {}}
+            return {"exists": False, "docId": "", "path": path, "contentHash": stable_hash(""), "empty": True, "attrs": {}}
         exported = self._request("/api/lute/copyStdMarkdown", {"id": doc_id})
         attrs = self._request("/api/attr/getBlockAttrs", {"id": doc_id}) or {}
+        canonical = canonical_document_markdown(exported)
         return {
             "exists": True,
             "docId": doc_id,
             "path": path,
-            "contentHash": stable_hash(canonical_document_markdown(exported)),
+            "contentHash": stable_hash(canonical),
+            "contentFingerprint": content_fingerprint(canonical),
+            "empty": not canonical.strip(),
             "attrs": attrs,
         }
 

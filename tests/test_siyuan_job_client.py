@@ -62,6 +62,16 @@ class SiYuanJobClientTests(unittest.TestCase):
         client.submit_job.assert_not_called()
         self.assertLess(time.monotonic() - started, 1)
 
+    def test_document_state_by_path_uses_siyuan_document_type_code(self):
+        client = jobs.SiYuanJobClient()
+        client._request = Mock(side_effect=[[{"id": "doc-path"}], {"content": "body"}, {}])
+
+        state = client.get_document_state(path="/Research/PaperGraph")
+
+        self.assertTrue(state["exists"])
+        statement = client._request.call_args_list[0][0][1]["stmt"]
+        self.assertIn("type = 'd'", statement)
+
     def test_document_state_uses_normalized_content_hash(self):
         client = jobs.SiYuanJobClient()
         client._request = Mock(side_effect=[
@@ -74,6 +84,17 @@ class SiYuanJobClientTests(unittest.TestCase):
         self.assertTrue(state["exists"])
         self.assertEqual(state["contentHash"], jobs.stable_hash("body"))
         self.assertEqual(state["attrs"]["custom-research-workflow"], "evil-read-arxiv")
+
+    def test_empty_note_placeholder_hash_matches_plugin(self):
+        exported = "# Note\n\n　　‍\n"
+        client = jobs.SiYuanJobClient()
+        client._request = Mock(side_effect=[exported, {}])
+
+        state = client.get_document_state(doc_id="doc-empty")
+
+        self.assertEqual(jobs.stable_hash(jobs.canonical_document_markdown(exported)), jobs.stable_hash("\n"))
+        self.assertEqual(state["contentHash"], jobs.stable_hash("\n"))
+        self.assertTrue(state["empty"])
 
     def test_search_notes_returns_siyuan_links(self):
         client = jobs.SiYuanJobClient()

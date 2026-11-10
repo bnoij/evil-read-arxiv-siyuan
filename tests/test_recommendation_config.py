@@ -100,6 +100,22 @@ class RecommendationConfigTests(unittest.TestCase):
 
         self.assertEqual([paper["title"] for paper in result], ["CVPR robot learning"])
 
+    def test_real_scholar_fields_map_year_venue_and_pdf_links(self):
+        normalized = search.normalize_paper({
+            "title": "Lerobot",
+            "year": "2026",
+            "citations": "126",
+            "publication_info": "International Conference on Learning Representations",
+            "pdf_links": "['https://arxiv.org/pdf/2601.00001']",
+            "url": "https://example.com/paper",
+        }, "scholar")
+
+        self.assertEqual(normalized["published"], "2026")
+        self.assertEqual(normalized["citationCount"], 126)
+        self.assertEqual(normalized["venue"], "International Conference on Learning Representations")
+        self.assertEqual(normalized["pdf_url"], "https://arxiv.org/pdf/2601.00001")
+        self.assertEqual(normalized["arxiv_id"], "2601.00001")
+
     def test_missing_optional_kimi_fields_do_not_fail(self):
         normalized = search.normalize_paper({"title": "Empty metadata", "source": "scholar"}, "scholar")
 

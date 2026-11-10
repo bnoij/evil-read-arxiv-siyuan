@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml
 
-SCRIPT_DIR = Path(__file__).resolve().parents[1] / "start-my-day" / "scripts"
+SCRIPT_DIR = Path(__file__).resolve().parents[2] / "start-my-day" / "scripts"
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 

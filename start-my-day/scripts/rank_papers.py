@@ -87,12 +87,17 @@ def normalize_paper(row: Dict, source: str = "arxiv") -> Dict:
     if "arxiv.org" in arxiv_id:
         match = re.search(r"arxiv\.org/(?:abs|pdf)/([^\s/]+)", arxiv_id)
         arxiv_id = match.group(1) if match else ""
-    if not arxiv_id and "arxiv.org" in url:
-        match = re.search(r"arxiv\.org/(?:abs|pdf)/([^\s/]+)", url)
+    pdf_links = str(row.get("pdf_links") or "")
+    if not arxiv_id:
+        match = re.search(r"arxiv\.org/(?:abs|pdf)/([^\s/'\"\]]+)", f"{url} {pdf_links}")
         arxiv_id = match.group(1) if match else ""
     arxiv_id = re.sub(r"\.pdf$", "", arxiv_id, flags=re.IGNORECASE)
     published = str(_first(row, "published", "publicationDate", "date", "year", default=""))
     summary = str(_first(row, "summary", "abstract", "abstractNote", default=""))
+    pdf_url = str(_first(row, "pdf_url", "pdfUrl", "pdf", default=""))
+    if not pdf_url and pdf_links:
+        match = re.search(r"https?://[^\s'\"\]]+", pdf_links)
+        pdf_url = match.group(0) if match else ""
     authors = _list(_first(row, "authors", "author", "creators", default=[]))
     authors = [str(author.get("name", "")) if isinstance(author, dict) else str(author) for author in authors]
     return {
@@ -105,9 +110,9 @@ def normalize_paper(row: Dict, source: str = "arxiv") -> Dict:
         "published_date": _datetime(published),
         "categories": _list(_first(row, "categories", "category", default=[])),
         "url": url or (f"https://arxiv.org/abs/{arxiv_id}" if arxiv_id else ""),
-        "pdf_url": str(_first(row, "pdf_url", "pdfUrl", "pdf", default="")) or (f"https://arxiv.org/pdf/{arxiv_id}" if arxiv_id else ""),
+        "pdf_url": pdf_url or (f"https://arxiv.org/pdf/{arxiv_id}" if arxiv_id else ""),
         "doi": str(_first(row, "doi", "DOI", default="")),
-        "venue": str(_first(row, "venue", "publication", "journal", "conference", default="")),
+        "venue": str(_first(row, "venue", "publication", "publication_info", "journal", "conference", default="")),
         "citationCount": _integer(_first(row, "citationCount", "citations", default=0)),
         "influentialCitationCount": _integer(_first(row, "influentialCitationCount", "influentialCitations", "citationCount", "citations", default=0)),
         "source": source,

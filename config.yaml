@@ -146,4 +146,3 @@ research_domains:
     priority: 5
 excluded_keywords:
   - workshop
-semantic_scholar_api_key: ''

@@ -12,7 +12,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from build_job import ensure_papers_job, write_documents_job
-from siyuan_job_client import SiYuanJobClient, canonical_document_markdown, stable_hash
+from siyuan_job_client import SiYuanJobClient, canonical_document_markdown, content_fingerprint, stable_hash
 
 WORKFLOW_NAME = "evil-read-arxiv"
 
@@ -108,12 +108,15 @@ def prepare_write_documents(papers, daily_path, graph_path, daily_markdown, grap
             operation = {**target, "expectedHash": None, "onConflict": "report"}
         elif force:
             operation = {**target, "expectedHash": current_hash, "onConflict": "overwrite"}
-        elif current_hash == stable_hash(""):
+        elif state.get("empty", current_hash == stable_hash("")):
             operation = {**target, "expectedHash": current_hash, "onConflict": "report"}
         else:
             managed = attrs.get("custom-research-workflow") == WORKFLOW_NAME and attrs.get("custom-research-content-hash") == current_hash
             new_hash = stable_hash(canonical_document_markdown(target["markdown"]))
-            if managed and current_hash == new_hash:
+            same_content = current_hash == new_hash
+            if state.get("contentFingerprint"):
+                same_content = state["contentFingerprint"] == content_fingerprint(target["markdown"])
+            if managed and same_content:
                 decision["status"] = "unchanged"
             else:
                 decision["status"] = "preserved"
@@ -197,6 +200,11 @@ def run_paper_analysis(client, config, paper, force=False):
     }
 
 
+def emit_json(value):
+    rendered = json.dumps(value, ensure_ascii=False, indent=2, default=str) + "\n"
+    sys.stdout.buffer.write(rendered.encode("utf-8"))
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run the two-stage Kimi to SiYuan/Zotero daily workflow")
     parser.add_argument("--config", required=True)
@@ -217,7 +225,7 @@ def main():
         result = run_paper_analysis(client, config, ranked["top_papers"][0], force=args.force)
     else:
         result = run_daily_workflow(client, config, ranked, overview, args.target_date, force=args.force)
-    print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
+    emit_json(result)
     return 0 if result["status"] == "completed" else 2
 
 
