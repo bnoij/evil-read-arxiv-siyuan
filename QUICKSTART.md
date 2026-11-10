@@ -1,190 +1,65 @@
-# 快速开始指南
+# 快速开始
 
-这是使用 evil-read-arxiv 的三步快速设置指南。
+## 1. 准备应用
 
-## 第一步：安装依赖
+1. 安装 Kimi Code 或 Kimi Work，并启用 arXiv/Scholar 论文数据库。
+2. 启动思源 3.7+，在“设置 → 关于”找到 API Token。
+3. 启动 Zotero 10+，在“设置 → 高级”允许其他应用通信。
+4. 安装并启用 `siyuan-plugin-zotero-notes` 0.2.0，选择目标笔记本并开启“Kimi 研究导入队列”。
 
-在终端运行：
+## 2. 配置项目
 
 ```bash
 pip install -r requirements.txt
-```
-
-## 第二步：配置
-
-### 2.1 设置环境变量
-
-设置 `OBSIDIAN_VAULT_PATH` 环境变量，指向你的 Obsidian Vault 路径。所有脚本会自动读取此变量，无需手动修改脚本中的路径。
-
-```bash
-# Windows PowerShell（永久生效，设置后需重启终端）
-[System.Environment]::SetEnvironmentVariable("OBSIDIAN_VAULT_PATH", "C:/Users/YourName/Documents/Obsidian Vault", "User")
-
-# macOS/Linux（添加到 ~/.bashrc 或 ~/.zshrc）
-echo 'export OBSIDIAN_VAULT_PATH="/Users/yourname/Documents/Obsidian Vault"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-### 2.2 创建配置文件
-
-```bash
-cd evil-read-arxiv
 cp config.example.yaml config.yaml
 ```
 
-编辑 `config.yaml`，修改：
+编辑 `config.yaml` 的研究领域、语言和推荐数量。配置持久环境变量 `SIYUAN_API_TOKEN`，不要把 Token 写进 YAML 或源码。
 
-```yaml
-# 将此路径改为你的 Obsidian Vault 路径
-vault_path: "/path/to/your/obsidian/vault"
+第一次导入时，在 Zotero 授权弹窗选择 **Always Allow**。之后 Zotero 密钥由插件管理。
 
-# 根据你的研究兴趣修改关键词
-research_domains:
-  "你的研究领域1":
-    keywords:
-      - "keyword1"
-      - "keyword2"
-```
+## 3. 安装技能
 
-### 2.3 将配置文件放入 Vault
-
-```bash
-# macOS/Linux
-cp config.yaml "$OBSIDIAN_VAULT_PATH/99_System/Config/research_interests.yaml"
-
-# Windows PowerShell
-Copy-Item config.yaml "$env:OBSIDIAN_VAULT_PATH\99_System\Config\research_interests.yaml"
-```
-
-### 2.4 将技能安装到 Claude Code 或 Codex
-
-将 evil-read-arxiv 目录中的四个技能文件夹复制到你的 Claude Code skills 目录：
-
-```bash
-# macOS/Linux
-cp -r evil-read-arxiv/start-my-day ~/.claude/skills/
-cp -r evil-read-arxiv/paper-analyze ~/.claude/skills/
-cp -r evil-read-arxiv/extract-paper-images ~/.claude/skills/
-cp -r evil-read-arxiv/paper-search ~/.claude/skills/
-cp -r evil-read-arxiv/conf-papers ~/.claude/skills/
-
-# Windows PowerShell
-Copy-Item -Recurse evil-read-arxiv\start-my-day $env:USERPROFILE\.claude\skills\
-Copy-Item -Recurse evil-read-arxiv\paper-analyze $env:USERPROFILE\.claude\skills\
-Copy-Item -Recurse evil-read-arxiv\extract-paper-images $env:USERPROFILE\.claude\skills\
-Copy-Item -Recurse evil-read-arxiv\paper-search $env:USERPROFILE\.claude\skills\
-Copy-Item -Recurse evil-read-arxiv\conf-papers $env:USERPROFILE\.claude\skills\
-```
-
-Codex 使用 `$HOME/.agents/skills`：
-
-```bash
-# macOS/Linux
-mkdir -p ~/.agents/skills
-cp -r evil-read-arxiv/{start-my-day,paper-analyze,extract-paper-images,paper-search,conf-papers} ~/.agents/skills/
-
-# Windows PowerShell
-$skills = "$env:USERPROFILE\.agents\skills"
-New-Item -ItemType Directory -Force $skills | Out-Null
-Copy-Item -Recurse evil-read-arxiv\start-my-day $skills
-Copy-Item -Recurse evil-read-arxiv\paper-analyze $skills
-Copy-Item -Recurse evil-read-arxiv\extract-paper-images $skills
-Copy-Item -Recurse evil-read-arxiv\paper-search $skills
-Copy-Item -Recurse evil-read-arxiv\conf-papers $skills
-```
-
-## 第三步：创建 Obsidian 目录结构
-
-在你的 Obsidian Vault 中创建以下目录：
-
-```
-你的Vault/
-├── 10_Daily/
-├── 20_Research/
-│   └── Papers/
-├── 99_System/
-│   └── Config/
-│       └── research_interests.yaml  # 第二步中已复制
-```
-
-## 开始使用
-
-### 1. 打开 Claude Code 或 Codex
-
-在你的 Obsidian Vault 目录中打开终端：
-
-```bash
-# 切换到你的 Obsidian Vault 目录
-cd "$OBSIDIAN_VAULT_PATH"
-
-# 启动你使用的 agent 客户端
-claude-code
-# 或 codex
-```
-
-### 2. 开始每日论文推荐
-
-在 Claude Code 中输入：
-
-```
-start my day
-```
-
-### 3. 分析单篇论文
-
-在 Claude Code 中输入：
-
-```
-paper-analyze 2602.12345
-```
-
-在 Codex 中可显式调用：
+将以下目录复制到 `.kimi-code/skills/`，或在 Kimi Work 技能页安装本地技能包：
 
 ```text
-$paper-analyze https://example.com/paper.pdf
+start-my-day
+paper-analyze
+extract-paper-images
+paper-search
+conf-papers
 ```
 
-`paper-analyze` 会自动区分 arXiv ID/link、公开 PDF、本地 PDF、研究项目页和博客；非 arXiv 来源不会写入伪造的 arXiv ID。
+保持这些目录与仓库脚本、配置的相对位置。Kimi Work 定时任务应把项目目录挂载为仓库根目录。
 
-## 常用 arXiv 分类
+## 4. 验证每日推荐
 
-| 分类代码 | 名称 | 说明 |
-|----------|------|------|
-| cs.AI | Artificial Intelligence | 人工智能 |
-| cs.LG | Learning | 机器学习 |
-| cs.CL | Computation and Language | 计算语言学/NLP |
-| cs.CV | Computer Vision | 计算机视觉 |
-| cs.MM | Multimedia | 多媒体 |
-| cs.MA | Multiagent Systems | 多智能体系统 |
-| cs.RO | Robotics | 机器人学 |
+在 Kimi 中运行：
 
-## 故障排除
+```text
+/start-my-day
+```
 
-### 问题："未指定 vault 路径" 或 "Papers directory not found"
+预期结果：
 
-**解决**：
-1. 确认环境变量已设置：
-   ```bash
-   # Windows PowerShell
-   echo $env:OBSIDIAN_VAULT_PATH
+- 10 篇推荐均能在 Zotero 查到，并带 arXiv PDF 链接附件。
+- 思源生成 `Research/Daily/<日期> 论文推荐`。
+- 每篇有 `Zotero/<论文>/Note`，前三篇包含精读和有效 assets 图片。
+- 日报同时包含 Zotero 和 `siyuan://blocks/` 链接。
+- 再执行一次不会重复创建，也不会覆盖手工 Note。
 
-   # macOS/Linux
-   echo $OBSIDIAN_VAULT_PATH
-   ```
-2. 如果为空，回到第二步设置环境变量
-3. 确认目录结构已正确创建
+可在 Zotero 插件 Dock 中打开 Note、刷新元数据或回传 Note。刷新元数据不会改写 Note。
 
-### 问题：论文图片提取失败
+## 5. 创建定时任务
 
-**解决**：
-1. 确认安装了 PyMuPDF：`pip install PyMuPDF`
-2. 检查 arXiv ID 格式是否正确（如 2602.12345）
+在 Kimi Work“定时任务”中新建每天 09:00 的任务，项目目录选择本仓库，提示词使用 `schedules/daily-paper-recommendations.md`。
 
-### 问题：关键词自动链接不准确
+电脑、Kimi Work、思源、Zotero 和插件必须运行。若任务失败，先检查 Token、插件队列和 Zotero 授权，不要改用旧搜索脚本。
 
-**解决**：编辑 `start-my-day/scripts/link_keywords.py` 中的 `COMMON_WORDS` 集合，添加你不需要自动链接的词。
+## 测试
 
-## 需要帮助？
+```bash
+python -m unittest discover -s tests -v
+```
 
-- 查看 [README.md](README.md) 获取详细说明
-- 提交 Issue 到 GitHub 仓库
+全部测试通过后，再手动触发一次定时任务，核对新增/复用文献数、日报链接和精读写入/保留状态。

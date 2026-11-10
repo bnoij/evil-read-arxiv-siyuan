@@ -75,6 +75,15 @@ class SiYuanJobClientTests(unittest.TestCase):
         self.assertEqual(state["contentHash"], jobs.stable_hash("body"))
         self.assertEqual(state["attrs"]["custom-research-workflow"], "evil-read-arxiv")
 
+    def test_search_notes_returns_siyuan_links(self):
+        client = jobs.SiYuanJobClient()
+        client._request = Mock(return_value={"blocks": [{"id": "doc1", "content": "Paper title", "hPath": "/Zotero/Paper"}]})
+
+        results = client.search_notes("Paper")
+
+        self.assertEqual(results[0]["url"], "siyuan://blocks/doc1")
+        self.assertEqual(results[0]["title"], "Paper title")
+
     def test_upload_assets_returns_siyuan_paths(self):
         session = Mock()
         response = Mock()

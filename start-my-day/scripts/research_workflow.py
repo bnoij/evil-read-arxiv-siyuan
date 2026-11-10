@@ -204,13 +204,19 @@ def main():
     parser.add_argument("--overview", default="")
     parser.add_argument("--overview-file", default="")
     parser.add_argument("--target-date", required=True)
+    parser.add_argument("--single", action="store_true", help="Import one analysis without creating a daily document")
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
     config = yaml.safe_load(Path(args.config).read_text(encoding="utf-8")) or {}
     ranked = json.loads(Path(args.ranked).read_text(encoding="utf-8"))
     overview = Path(args.overview_file).read_text(encoding="utf-8") if args.overview_file else args.overview
     client = SiYuanJobClient(config.get("siyuan", {}).get("base_url", "http://127.0.0.1:6806"))
-    result = run_daily_workflow(client, config, ranked, overview, args.target_date, force=args.force)
+    if args.single:
+        if len(ranked.get("top_papers", [])) != 1:
+            parser.error("--single requires exactly one paper in ranked JSON")
+        result = run_paper_analysis(client, config, ranked["top_papers"][0], force=args.force)
+    else:
+        result = run_daily_workflow(client, config, ranked, overview, args.target_date, force=args.force)
     print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
     return 0 if result["status"] == "completed" else 2
 

@@ -1,25 +1,24 @@
-# evil-read-arxiv Configuration File Example
-# Copy this file to config.yaml and modify for your own setup
-# Or set OBSIDIAN_VAULT_PATH environment variable and place config.yaml at:
-#   $OBSIDIAN_VAULT_PATH/99_System/Config/research_interests.yaml
+# evil-read-arxiv Kimi + SiYuan + Zotero configuration example
+# Copy this file to config.yaml. Keep credentials out of this file.
 
-# Language setting (zh/en)
-# - "zh": Chinese reports
-# - "en": English reports (default)
+# Language setting: "zh" for Chinese reports, "en" for English reports
 language: "en"
 
-# Obsidian Vault path (required)
-# Option 1: Use environment variable (recommended)
-#   export OBSIDIAN_VAULT_PATH="/path/to/your/obsidian-vault"
-# Option 2: Set path directly below
-vault_path: "/path/to/your/obsidian-vault"
+# SiYuan HTTP API. Set SIYUAN_API_TOKEN in the environment instead of writing a token here.
+siyuan:
+  base_url: "http://127.0.0.1:6806"
+  assets_dir: "/assets/"
+  daily_root: "/Research/Daily"
+  graph_path: "/Research/PaperGraph"
+  job_timeout: 900
 
-# Papers directory relative to vault (optional, default: 20_Research/Papers)
-papers_dir: "20_Research/Papers"
+recommendation:
+  top_n: 10
+  deep_analysis_count: 3
+  recent_days: 30
+  hot_days: 365
 
-# Semantic Scholar API Key (optional, reduces 429 rate limiting)
-# Free registration: https://www.semanticscholar.org/product/api#api-key
-# semantic_scholar_api_key: "your-api-key-here"
+# The destination notebook and Zotero root are configured in siyuan-plugin-zotero-notes 0.2.0.
 
 # Research interests configuration (required)
 research_domains:
@@ -208,7 +207,7 @@ excluded_keywords:
   - "workshop"
 
 # Custom common words filter list (optional)
-# These words will be skipped during automatic keyword linking (wikilink replacement)
+# Optional common words to skip when generating related-note links
 # Defaults already include common English function words and general ML terms
 # extra_common_words:
 #   - "dataset"

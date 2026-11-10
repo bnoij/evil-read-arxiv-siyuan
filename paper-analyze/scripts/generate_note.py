@@ -162,7 +162,7 @@ def research_template(
 [行内使用 $...$，块级使用 $$...$$]
 
 ### 方法架构与图片
-[使用 ![[filename.png|800]] 并解释图意]
+[使用 ![图意](assets/filename.png) 并解释图意]
 
 ## 实验与证据
 - **数据集/任务**：--
@@ -187,7 +187,7 @@ def research_template(
 [何时适用、何时不适用]
 
 ## 相关工作与技术路线
-- [[相关资料|显示标题]] — [关系]
+- [显示标题](siyuan://blocks/document-id) — [关系]
 
 ## 综合评价
 
@@ -201,7 +201,7 @@ def research_template(
 
 ## 我的笔记
 
-%% 在这里添加个人笔记 %%
+<!-- 在这里添加个人笔记 -->
 
 ## 外部资源
 - [代码/项目主页/演示]
@@ -247,7 +247,7 @@ def research_template(
 [Use $...$ inline and $$...$$ for blocks]
 
 ### Architecture and Figures
-[Use ![[filename.png|800]] and explain each figure]
+[Use ![图意](assets/filename.png) and explain each figure]
 
 ## Experiments and Evidence
 - **Datasets/Tasks**: --
@@ -272,7 +272,7 @@ def research_template(
 [When it applies and when it does not]
 
 ## Related Work and Roadmap
-- [[Related note|Display title]] — [Relationship]
+- [Display title](siyuan://blocks/document-id) — [Relationship]
 
 ## Assessment
 
@@ -286,7 +286,7 @@ def research_template(
 
 ## My Notes
 
-%% Add personal notes here %%
+<!-- Add personal notes here -->
 
 ## External Resources
 - [Code/project/demo]
@@ -357,7 +357,7 @@ def web_template(
 - **适用边界**：--
 
 ## 与已有知识的关系
-- [[相关资料|显示标题]] — [关系]
+- [显示标题](siyuan://blocks/document-id) — [关系]
 
 ## 实践启示
 - [可操作启示]
@@ -365,7 +365,7 @@ def web_template(
 
 ## 我的笔记
 
-%% 在这里添加个人笔记 %%
+<!-- 在这里添加个人笔记 -->
 """
 
     return f"""{frontmatter}
@@ -404,7 +404,7 @@ def web_template(
 - **Scope**: --
 
 ## Relationship to Existing Knowledge
-- [[Related note|Display title]] — [Relationship]
+- [Display title](siyuan://blocks/document-id) — [Relationship]
 
 ## Practical Takeaways
 - [Actionable takeaway]
@@ -412,7 +412,7 @@ def web_template(
 
 ## My Notes
 
-%% Add personal notes here %%
+<!-- Add personal notes here -->
 """
 
 

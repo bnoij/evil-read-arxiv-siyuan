@@ -129,6 +129,30 @@ class SiYuanJobClient:
             "attrs": attrs,
         }
 
+    def search_notes(self, query, limit=20):
+        data = self._request("/api/search/fullTextSearchBlock", {
+            "query": query,
+            "page": 1,
+            "paths": [],
+            "boxes": [],
+            "types": {"document": True, "heading": True, "paragraph": True},
+            "method": 0,
+            "orderBy": 0,
+            "groupBy": 0,
+        }) or {}
+        results = []
+        for block in (data.get("blocks") or [])[:limit]:
+            block_id = block.get("id") or block.get("block_id") or block.get("root_id")
+            if not block_id:
+                continue
+            results.append({
+                "id": block_id,
+                "title": block.get("content") or block.get("hPath") or block_id,
+                "path": block.get("hPath") or "",
+                "url": f"siyuan://blocks/{block_id}",
+            })
+        return results
+
     def upload_assets(self, paths, assets_dir="/assets/"):
         uploaded = []
         for source in paths:

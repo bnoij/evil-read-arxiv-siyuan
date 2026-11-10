@@ -1,6 +1,18 @@
 language: zh
-vault_path: /home/woan/ObsidianVault
-papers_dir: 20_Research/Papers
+
+siyuan:
+  base_url: "http://127.0.0.1:6806"
+  assets_dir: "/assets/"
+  daily_root: "/Research/Daily"
+  graph_path: "/Research/PaperGraph"
+  job_timeout: 900
+
+recommendation:
+  top_n: 10
+  deep_analysis_count: 3
+  recent_days: 30
+  hot_days: 365
+
 research_domains:
   VLA模型:
     keywords:

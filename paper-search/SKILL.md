@@ -1,139 +1,16 @@
 ---
 name: paper-search
-description: 在本地 Obsidian Vault 的论文笔记中按标题、作者、关键词、标签、领域或 arXiv ID 搜索并排序结果。Use when the user asks to find, filter, or revisit papers already captured in local notes; do not use for downloading new papers.
+description: 在思源已有论文笔记中按标题、作者、关键词、领域或 arXiv ID 搜索并返回思源链接。Use when revisiting existing notes rather than finding new papers.
 ---
-You are the Paper Searcher for OrbitOS.
 
-# 目标
-帮助用户通过关键词、作者、研究领域或特定主题在已有的论文笔记中搜索相关论文。
+# 搜索已有论文笔记
 
-# 工作流程
+使用 `start-my-day/scripts/siyuan_job_client.py` 中的 `SiYuanJobClient.search_notes(query)`，它通过思源全文搜索接口读取已有内容。不要扫描本地 Markdown，也不要用本技能搜索新论文。
 
-## 步骤1：解析搜索查询
-
-分析用户的搜索查询以确定：
-1. **搜索类型**
-   - 标题搜索：查询包含特定标题
-   - 作者搜索：查询包含作者姓名
-   - 关键词搜索：查询包含特定关键词
-   - 领域搜索：查询特定领域
-   - 标签搜索：查询包含特定标签
-
-2. **提取搜索参数**
-   - 主要搜索词（必须匹配）
-   - 次要关键词（可选）
-   - 排除关键词（可选）
-
-3. **确定搜索范围**
-   - 所有领域（默认）
-   - 特定领域（如果指定）
-
-## 步骤2：执行搜索
-
-### 2.1 搜索策略
-
-使用Grep在`20_Research/Papers/`目录中搜索：
-- 标题搜索：在所有文件中搜索标题
-- 作者搜索：搜索frontmatter的authors字段
-- 关键词搜索：搜索文档内容
-- 领域搜索：搜索特定领域文件夹
-
-### 2.2 搜索参数
+执行方式示例：
 
 ```bash
-# 按标题搜索
-grep -r -i "查询关键词" "20_Research/Papers/ --include="*.md"
-
-# 按作者搜索
-grep -r "作者姓名" "20_Research/Papers/ --include="*.md" | grep -i "author: 作者姓名"
-
-# 按领域搜索
-grep -r "关键词" "20_Research/Papers/领域/"
+python -c "import sys; sys.path.insert(0, '$SKILL_DIR/../start-my-day/scripts'); from siyuan_job_client import SiYuanJobClient; import json; print(json.dumps(SiYuanJobClient().search_notes('<query>'), ensure_ascii=False, indent=2))"
 ```
 
-## 步骤3：处理搜索结果
-
-### 3.1 整理结果
-
-1. **提取基本信息**
-   - 论文标题
-   - 作者
-   - 发布时间
-   - 领域
-   - 文件路径
-
-2. **匹配上下文**
-   - 提取匹配行（关键词出现位置）
-   - 用于计算相关性
-
-### 3.2 计算相关性评分
-
-- **标题匹配**（高权重）：+10分
-- **内容匹配**（中权重）：+5分
-- **作者匹配**（高权重）：+8分
-- **领域匹配**（中权重）：+5分
-- **标签匹配**（中权重）：+3分
-
-### 3.3 应用筛选条件
-
-- 排除包含排除关键词的论文
-- 移除质量评分低于阈值的论文（可选）
-
-## 步骤4：展示结果
-
-### 4.1 输出格式
-
-按研究领域分组，每篇论文显示：
-
-```markdown
-## 论文搜索结果
-
-**搜索关键词**：[查询词]
-
-### 大模型方向（N篇）
-
-#### 1. [[论文标题]] - [[链接]]
-- **相关性**：⭐ [X.X/10]
-- **作者**：[作者1, 作者2]
-- **发布时间**：YYYY-MM-DD
-- **领域**：具体子领域
-- **匹配位置**：标题
-
-### 多模态技术（N篇）
-
-[类似格式]
-```
-
-### 未找到结果
-
-如果搜索结果为空：
-- 提供搜索建议
-- 建议尝试其他关键词
-- 建议扩大搜索范围
-
-## 重要规则
-
-- **搜索效率**：使用Grep快速搜索，避免读取大文件
-- **不区分大小写**：使用-i标志
-- **精确匹配**：优先显示精确匹配
-- **相关性优先**：标题匹配权重最高
-- **保持简洁**：每个论文显示核心信息
-- **支持wikilink**：使用[[论文标题]]格式创建链接
-
-## 使用说明
-
-当用户搜索论文时：
-1. 使用特定语法：
-   - 搜索标题：`搜索 "论文标题"`
-   - 搜索作者：`搜索 "作者姓名"`
-   - 搜索关键词：`搜索 "关键词"`
-   - 搜索领域：`搜索 "领域"`
-
-2. 支持组合搜索：
-   - 搜索领域 + 关键词：`搜索 "大模型" "量化"`
-
-3. 搜索结果会显示：
-   - 论文标题
-   - 链接到笔记
-   - 相关性评分
-   - 作者和发布时间
+按标题、作者、关键词或 arXiv ID 构造查询。结果包含标题、路径和 `siyuan://blocks/<id>`。按标题匹配、作者匹配、正文匹配排序，去重后展示；空结果时建议更短关键词或相关领域词。环境需要 `SIYUAN_API_TOKEN`，失败时报告 API 错误，不伪造结果。
