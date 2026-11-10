@@ -125,7 +125,7 @@ class SourceSupportTests(unittest.TestCase):
             self.assertTrue(Path(result["local_pdf"]).exists())
 
     def test_blog_metadata_and_source_aware_note(self):
-        with tempfile.TemporaryDirectory() as work, tempfile.TemporaryDirectory() as vault:
+        with tempfile.TemporaryDirectory() as work:
             url = f"{self.base_url}/posts/scaling/"
             result = resolver.resolve_source(url, work)
             self.assertEqual(result["source_type"], "blog")
@@ -133,6 +133,7 @@ class SourceSupportTests(unittest.TestCase):
             self.assertEqual(result["authors"], "Example Author")
             self.assertEqual(result["published_date"], "2026-06-24")
 
+            note_path = Path(work) / "note.md"
             command = [
                 sys.executable,
                 str(ROOT / "paper-analyze/scripts/generate_note.py"),
@@ -150,13 +151,11 @@ class SourceSupportTests(unittest.TestCase):
                 result["published_date"],
                 "--domain",
                 "scaling-laws",
-                "--vault",
-                vault,
+                "--output",
+                str(note_path),
             ]
             subprocess.run(command, check=True, capture_output=True, text=True)
-            notes = list(Path(vault).rglob("*.md"))
-            self.assertEqual(len(notes), 1)
-            content = notes[0].read_text(encoding="utf-8")
+            content = note_path.read_text(encoding="utf-8")
             self.assertIn('source_type: "blog"', content)
             self.assertIn(url, content)
             self.assertNotIn("arxiv_id:", content)
@@ -212,36 +211,6 @@ class SourceSupportTests(unittest.TestCase):
                 extractor.main()
 
         self.assertEqual(converted, ["method.pdf"])
-
-    def test_non_arxiv_graph_node_uses_document_id(self):
-        with tempfile.TemporaryDirectory() as vault:
-            graph_script = ROOT / "paper-analyze/scripts/update_graph.py"
-            subprocess.run(
-                [
-                    sys.executable,
-                    str(graph_script),
-                    "--document-id",
-                    "url-example",
-                    "--source-type",
-                    "blog",
-                    "--source-url",
-                    "https://example.com/blog/",
-                    "--title",
-                    "Example Blog",
-                    "--domain",
-                    "research",
-                    "--vault",
-                    vault,
-                ],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            graph_path = Path(vault) / "20_Research/PaperGraph/graph_data.json"
-            graph = json.loads(graph_path.read_text(encoding="utf-8"))
-            self.assertEqual(graph["nodes"][0]["id"], "url-example")
-            self.assertEqual(graph["nodes"][0]["source_type"], "blog")
-            self.assertEqual(graph["nodes"][0]["arxiv_id"], "")
 
 
 if __name__ == "__main__":

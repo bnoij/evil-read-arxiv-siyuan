@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Generate source-aware Obsidian analysis note templates."""
+"""Generate source-aware analysis note templates in a temporary workspace."""
 
 import argparse
 import hashlib
@@ -23,16 +23,6 @@ SOURCE_TYPES = (
     "local_document",
     "title",
 )
-
-
-def get_vault_path(cli_vault=None):
-    if cli_vault:
-        return cli_vault
-    env_path = os.environ.get("OBSIDIAN_VAULT_PATH")
-    if env_path:
-        return env_path
-    logger.error("未指定 vault 路径。请通过 --vault 或 OBSIDIAN_VAULT_PATH 设置。")
-    sys.exit(1)
 
 
 def stable_document_id(paper_id, source_url, title):
@@ -433,7 +423,7 @@ def main():
         datefmt="%H:%M:%S",
         stream=sys.stderr,
     )
-    parser = argparse.ArgumentParser(description="Generate a source-aware Obsidian analysis note")
+    parser = argparse.ArgumentParser(description="Generate a source-aware analysis note in a temporary workspace")
     parser.add_argument("--paper-id", default="", help="arXiv ID; only for source-type arxiv")
     parser.add_argument("--document-id", default="", help="Stable source identifier")
     parser.add_argument("--source-type", choices=SOURCE_TYPES, default="arxiv")
@@ -443,7 +433,7 @@ def main():
     parser.add_argument("--published-date", default="")
     parser.add_argument("--venue", default="")
     parser.add_argument("--domain", default="其他")
-    parser.add_argument("--vault", default=None)
+    parser.add_argument("--output", required=True, help="Temporary Markdown output path")
     parser.add_argument("--language", choices=["zh", "en"], default="zh")
     parser.add_argument("--force", action="store_true", help="Overwrite an existing generated note")
     args = parser.parse_args()
@@ -455,15 +445,10 @@ def main():
         logger.error("source-type arxiv 需要 --paper-id")
         return 2
 
-    vault_root = get_vault_path(args.vault)
     created = datetime.now().strftime("%Y-%m-%d")
     domain = args.domain.strip("/\\").replace("..", "") or ("其他" if args.language == "zh" else "Other")
     document_id = args.document_id or stable_document_id(args.paper_id, args.source_url, args.title)
-    safe_title = re.sub(r'[ /\\:*?"<>|]+', "_", args.title).strip("_") or document_id
-
-    note_dir = os.path.join(vault_root, "20_Research", "Papers", domain)
-    os.makedirs(note_dir, exist_ok=True)
-    note_path = os.path.join(note_dir, f"{safe_title}.md")
+    note_path = args.output
     if os.path.exists(note_path) and not args.force:
         logger.error("笔记已存在，拒绝覆盖: %s", note_path)
         return 2
